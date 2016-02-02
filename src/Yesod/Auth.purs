@@ -18,14 +18,15 @@ import Yesod.Auth.Types (LoginResponse(..))
 -- | Takes url, username, password
 login :: ∀ eff. String -> String -> String -> Aff (ajax :: AJAX | eff) LoginResponse
 login url username password =
-  _.response <$> Ajax.post url (runPure formData)
+  _.response <$> Ajax.post (url <> "/login") (runPure formData)
   where
     formData = FormData.empty
            >>= FormData.insert "password" password
            >>= FormData.insert "username" username
 
-logout :: ∀ eff. Aff (ajax :: AJAX | eff) Unit
-logout = _.response <$> Ajax.post' "backend/auth/logout" (Nothing :: Maybe Unit)
+-- | Takes url
+logout :: ∀ eff. String -> Aff (ajax :: AJAX | eff) Unit
+logout url = _.response <$> Ajax.post' (url <> "/logout") (Nothing :: Maybe Unit)
 
 module Yesod.Auth.Types
   ( LoginResponse(..)
