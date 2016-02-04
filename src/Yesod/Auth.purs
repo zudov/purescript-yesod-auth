@@ -5,24 +5,29 @@ module Yesod.Auth
   ) where
 
 import Data.Either (either)
+import Control.Bind ((=<<))
 import Control.Monad.Aff (Aff(), attempt)
 import Control.Monad.Eff (runPure)
+import Control.Monad.Eff.Class (liftEff)
+import DOM (DOM())
 import DOM.XHR.FormData as FormData
 import Data.Maybe (Maybe(Just, Nothing))
 import Network.HTTP.Affjax (AJAX())
 import Network.HTTP.Affjax (post, post') as Ajax
-import Prelude ((<$>), (<<<), const, Unit, (<>), (>>=))
+import Prelude ((<$>), (<<<), const, Unit, (<>), (>>=), bind, pure)
 
 import Yesod.Auth.Types (LoginResponse(..))
 
 -- | Takes url, username, password
-login :: ∀ eff. String -> String -> String -> Aff (ajax :: AJAX | eff) LoginResponse
+login :: ∀ eff. String -> String -> String -> Aff (ajax :: AJAX, dom :: DOM | eff) LoginResponse
 login url username password =
-  _.response <$> Ajax.post (url <> "/login") (runPure formData)
+  _.response <$> (Ajax.post (url <> "/login") =<< liftEff mkFormData)
   where
-    formData = FormData.empty
-           >>= FormData.insert "password" password
-           >>= FormData.insert "username" username
+    mkFormData = do
+      fd <- FormData.empty
+      FormData.insert "password" password fd
+      FormData.insert "username" username fd
+      pure fd
 
 -- | Takes url
 logout :: ∀ eff. String -> Aff (ajax :: AJAX | eff) Unit
