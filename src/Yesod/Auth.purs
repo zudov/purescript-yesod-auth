@@ -9,7 +9,6 @@ module Yesod.Auth
   ) where
 
 import Control.Monad.Aff (Aff())
-import DOM (DOM())
 import Data.Maybe (Maybe(Just, Nothing))
 import Network.HTTP.Affjax (AJAX())
 import Network.HTTP.Affjax (post, post') as Ajax
@@ -65,7 +64,7 @@ login
      Endpoint
   -> String
   -> String
-  -> Aff (ajax :: AJAX, dom :: DOM | eff) (Either LoginError LoginSuccess)
+  -> Aff (ajax :: AJAX | eff) (Either LoginError LoginSuccess)
 login endpoint = login' (printURI (runEndpoint endpoint (file "login")))
 
 -- | This version of `login` allows to just provide URI of the '/login' endpoint
@@ -77,7 +76,7 @@ login'
      String -- ^ URI of the login endpoint
   -> String -- ^ Username
   -> String -- ^ Password
-  -> Aff (ajax :: AJAX, dom :: DOM | eff) (Either LoginError LoginSuccess)
+  -> Aff (ajax :: AJAX | eff) (Either LoginError LoginSuccess)
 login' uri username password = 
    runLoginResponse <<< _.response <$> Ajax.post uri formquery
   where
