@@ -13,7 +13,8 @@
   "dependencies": {
     "purescript-affjax": "^0.10.2",
     "purescript-foreign-generic": "^0.3.0",
-    "purescript-form-urlencoded": "~0.1.1"
+    "purescript-form-urlencoded": "~0.1.1",
+    "purescript-uri": "~0.2.1"
   },
   "devDependencies": {
     "purescript-test-unit": "~4.1.0"

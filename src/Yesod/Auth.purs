@@ -1,8 +1,11 @@
 module Yesod.Auth
-  ( LoginSuccess(..)
+  ( Endpoint()
+  , LoginSuccess(..)
   , LoginError(..)
   , login
+  , login'
   , logout
+  , logout'
   ) where
 
 import Control.Monad.Aff (Aff())
@@ -23,24 +26,79 @@ import Network.HTTP.MimeType.Common as Mime
 
 import Data.FormURLEncoded (FormURLEncoded(..))
 
--- | Takes url, username, password
+import Data.URI
+import Data.URI.Types
+import Data.Path.Pathy
+
+-- | Identifies the location of the used authentication plugin.
+-- | Example:
+-- |
+-- |     -- http://localhost:4000/auth/page/hardcoded/
+-- |     myEndpoint =
+-- |       { scheme: Just (URIScheme "http"
+-- |       , authority:
+-- |           Just (Authority
+-- |                   Nothing
+-- |                   [ Tuple (NameAddress "localhost" (Just 4000)) ])
+-- |       , path: rootDir </> dir "auth" </> dir "page" </> dir "hardcoded"
+-- |       }
+type Endpoint
+  = { scheme :: Maybe URIScheme
+    , authority :: Maybe Authority
+    , path :: AbsDir Sandboxed
+    }
+
+runEndpoint :: Endpoint -> RelFile Sandboxed -> URI
+runEndpoint { scheme, authority, path } file = 
+  URI scheme
+      (HierarchicalPart authority (Just (Left (path </> file))))
+      Nothing
+      Nothing
+
+-- | Makes login query to the '/login' of the provided endpoint using given
+-- | username/password. The result is returned, and the token is persisted in
+-- | the session.
+-- |
+-- |     login myEndpoint "username" "password"
 login
   :: ∀ eff.
-     String
+     Endpoint
   -> String
   -> String
   -> Aff (ajax :: AJAX, dom :: DOM | eff) (Either LoginError LoginSuccess)
-login url username password =
-  runLoginResponse <<< _.response <$> (Ajax.post (url <> "/login") formquery)
+login endpoint = login' (printURI (runEndpoint endpoint (file "login")))
+
+-- | This version of `login` allows to just provide URI of the '/login' endpoint
+-- | as a `String`. No fancy types involved.
+-- | 
+-- |     login' "http://localhost:7000/auth/page/hardcoded/login" "username" "password"
+login'
+  :: ∀ eff.
+     String -- ^ URI of the login endpoint
+  -> String -- ^ Username
+  -> String -- ^ Password
+  -> Aff (ajax :: AJAX, dom :: DOM | eff) (Either LoginError LoginSuccess)
+login' uri username password = 
+   runLoginResponse <<< _.response <$> Ajax.post uri formquery
   where
     formquery =
       FormURLEncoded
         [ Tuple "username" (Just username)
         , Tuple "password" (Just password) ]
 
--- | Takes url
-logout :: ∀ eff. String -> Aff (ajax :: AJAX | eff) Unit
-logout url = _.response <$> Ajax.post' (url <> "/logout") (Nothing :: Maybe Unit)
+-- | Makes logout query to the '/logout' of the provided endpoint using given
+-- | username/password.
+-- |
+-- |     logout myEndpoint
+logout :: ∀ eff. Endpoint -> Aff (ajax :: AJAX | eff) Unit
+logout endpoint = logout' (printURI (runEndpoint endpoint (file "logout")))
+
+-- | This version of `logout` allows to just provide URI of the '/logout' endpoint
+-- | as a `String`. No fancy types involved.
+-- | 
+-- |     logout' "http://localhost:7000/auth/page/hardcoded/logout"
+logout' :: ∀ eff. String -> Aff (ajax :: AJAX | eff) Unit
+logout' uri = _.response <$> Ajax.post' uri (Nothing :: Maybe Unit)
 
 newtype LoginResponse = LoginResponse (Either LoginError LoginSuccess)
 

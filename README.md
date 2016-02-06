@@ -6,12 +6,16 @@ Bindings to `yesod-auth` endpoints.
 `./test/Main.hs` (requires `stack`) and launch `pulp test` to do some queries
 against it.
 
-Here is a glimse at an API:
+Here is a glimse at the API:
 
 ```haskell
 import Yesod.Auth (login, logout, LoginSuccess(..), LoginFailure(..))
 
-let endpoint = "http://missile.dog/auth/page/hardcoded"
+let endpoint =
+      { scheme: Just (URIScheme "http")
+      , authority: Just (Authority Nothing [Tuple (NameAddress "missile.dog") Nothing])
+      , path: rootDir </> dir "auth" </> dir "page" </> dir "hardcoded"
+      }
 
 result <- login endpoint "username" "password"
 
