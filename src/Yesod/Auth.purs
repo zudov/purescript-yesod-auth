@@ -9,25 +9,25 @@ import Control.Bind ((=<<))
 import Control.Monad.Aff (Aff(), attempt)
 import Control.Monad.Eff (runPure)
 import Control.Monad.Eff.Class (liftEff)
+import Data.Tuple (Tuple(..))
 import DOM (DOM())
-import DOM.XHR.FormData as FormData
 import Data.Maybe (Maybe(Just, Nothing))
 import Network.HTTP.Affjax (AJAX())
 import Network.HTTP.Affjax (post, post') as Ajax
-import Prelude ((<$>), (<<<), const, Unit, (<>), (>>=), bind, pure)
-
+import Prelude (($), (<$>), (<<<), const, Unit, (<>), (>>=), bind, pure)
 import Yesod.Auth.Types (LoginResponse(..))
+
+import Data.FormURLEncoded (FormURLEncoded(..))
 
 -- | Takes url, username, password
 login :: ∀ eff. String -> String -> String -> Aff (ajax :: AJAX, dom :: DOM | eff) LoginResponse
 login url username password =
-  _.response <$> (Ajax.post (url <> "/login") =<< liftEff mkFormData)
+  _.response <$> (Ajax.post (url <> "/login") formquery)
   where
-    mkFormData = do
-      fd <- FormData.empty
-      FormData.insert "password" password fd
-      FormData.insert "username" username fd
-      pure fd
+    formquery =
+      FormURLEncoded
+        [ Tuple "username" (Just username)
+        , Tuple "password" (Just password) ]
 
 -- | Takes url
 logout :: ∀ eff. String -> Aff (ajax :: AJAX | eff) Unit
@@ -37,12 +37,12 @@ module Yesod.Auth.Types
   ( LoginResponse(..)
   ) where
 
-import Prelude (class Show, (>>>), map)
-import Data.Generic (class Generic, gShow)
+import Prelude (class Show, (>>>), map, class Eq)
+import Data.Generic (class Generic, gShow, gEq)
 import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
 import Data.Foreign.Class (readProp) as Foreign
-import Network.HTTP.Affjax.Response (class Respondable, ResponseType(..)) as Ajax
+import Network.HTTP.Affjax.Response (class Respondable, ResponseType(..))
 import Network.HTTP.MimeType.Common as Mime
 
 data LoginResponse
@@ -51,9 +51,10 @@ data LoginResponse
 
 derive instance genericLoginResponse :: Generic LoginResponse
 instance showLoginResponse :: Show LoginResponse where show = gShow
+instance eqLoginResponse :: Eq LoginResponse where eq = gEq
 
-instance respondableLoginResponse :: Ajax.Respondable LoginResponse where
-  responseType = Tuple (Just Mime.applicationJSON) Ajax.JSONResponse
+instance respondableLoginResponse :: Respondable LoginResponse where
+  responseType = Tuple (Just Mime.applicationJSON) JSONResponse
   fromResponse = Foreign.readProp "message" >>> map fromMessage
     where
       fromMessage "Login Successful" = LoginSuccess
