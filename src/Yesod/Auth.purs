@@ -13,7 +13,7 @@ import DOM (DOM())
 import Data.Maybe (Maybe(Just, Nothing))
 import Network.HTTP.Affjax (AJAX())
 import Network.HTTP.Affjax (post, post') as Ajax
-import Prelude (class Eq, class Show, Unit, (>>>), map, (<>), (<$>), (<<<))
+import Prelude (class Eq, class Show, Unit, (>>>), map, (<$>), (<<<))
 
 import Data.Generic (class Generic, gShow, gEq)
 import Data.Tuple (Tuple(..))
@@ -26,11 +26,11 @@ import Network.HTTP.MimeType.Common as Mime
 
 import Data.FormURLEncoded (FormURLEncoded(..))
 
-import Data.URI
-import Data.URI.Types
-import Data.Path.Pathy
+import Data.URI (printURI)
+import Data.URI.Types (Authority, URIScheme, HierarchicalPart(HierarchicalPart), URI(URI))
+import Data.Path.Pathy (Sandboxed, RelFile, AbsDir, file, (</>))
 
--- | Identifies the location of the used authentication plugin.
+-- | Identifies the location of the authentication plugin.
 -- | Example:
 -- |
 -- |     -- http://localhost:4000/auth/page/hardcoded/
