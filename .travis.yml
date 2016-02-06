@@ -1,5 +1,5 @@
 language: node_js
-sudo: false
+sudo: required
 node_js:
   - 5.3
 env:
@@ -10,16 +10,22 @@ install:
 - tar -xvf $HOME/purescript.tar.gz -C $HOME/
 - chmod a+x $HOME/purescript
 - npm install bower pulp -g
+- npm install xhr2
 - bower install
 # Installing stack for build script
-- wget -O $HOME/stack.tar.gz https://www.stackage.org/stack/linux-x86_64
-- mkdir $HOME/stack
-- tar -xvf $HOME/stack.tar.gz -C $HOME/stack/
-- chmod a+x $HOME/stack/stack
+- sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 575159689BEFB442
+- echo 'deb http://download.fpcomplete.com/ubuntu precise main'| sudo tee /etc/apt/sources.list.d/fpco.list
+- sudo apt-get update && sudo apt-get install stack -y
+- stack setup --resolver lts-5.1
+- stack build --resolver lts-5.1 yesod
 
 before_script:
-- export PATH=$PATH:$HOME/stack/
 - chmod a+x test/Main.hs
+- ./test/Main.hs &
 script:
-  - pulp build
-  - ./test/Main.hs & sleep 3 && pulp test 
+- pulp build
+- pulp test 
+
+cache:
+  directories:
+    - $HOME/.stack
