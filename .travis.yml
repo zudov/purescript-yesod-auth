@@ -1,5 +1,5 @@
 language: node_js
-sudo: false
+sudo: required
 node_js:
   - 5.3
 env:
@@ -11,5 +11,15 @@ install:
 - chmod a+x $HOME/purescript
 - npm install bower pulp -g
 - bower install
+# Installing stack for build script
+- wget -O $HOME/stack.tar.gz https://www.stackage.org/stack/linux-x86_64
+- mkdir $HOME/stack
+- tar -xvf $HOME/stack.tar.gz -C $HOME/stack/
+- chmod a+x $HOME/stack/stack
+
+before_script:
+- export PATH=$PATH:$HOME/stack/
+- chmod a+x test/Main.hs
 script:
-  - pulp build && pulp docs
+  - pulp build
+  - ./test/Main.hs & sleep 3 && pulp test 
