@@ -9,7 +9,7 @@ install:
 - wget -O $HOME/purescript.tar.gz https://github.com/purescript/purescript/releases/download/$TAG/linux64.tar.gz
 - tar -xvf $HOME/purescript.tar.gz -C $HOME/
 - chmod a+x $HOME/purescript
-- npm install bower pulp -g
+- npm install bower pulp browserify -g
 - npm install xhr2
 - bower install
 # Installing stack for build script
@@ -25,7 +25,8 @@ before_script:
 
 script:
 - pulp build
-- pulp test -r phantomjs
+- pulp test -r browserify > output/test.js
+- phantomjs phantom.js
 
 cache:
   directories:
