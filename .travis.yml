@@ -17,11 +17,12 @@ install:
 - echo 'deb http://download.fpcomplete.com/ubuntu precise main'| sudo tee /etc/apt/sources.list.d/fpco.list
 - sudo apt-get update && sudo apt-get install stack -y
 - stack setup --resolver lts-5.1
-- stack build --resolver lts-5.1 yesod
+- stack build --resolver lts-5.1 yesod yesod-auth wai-cors wai-middleware-static
 
 before_script:
 - chmod a+x test/Main.hs
 - ./test/Main.hs &
+- sleep 10
 
 script:
 - pulp build
