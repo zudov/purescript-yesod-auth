@@ -22,9 +22,10 @@ install:
 before_script:
 - chmod a+x test/Main.hs
 - ./test/Main.hs &
+
 script:
 - pulp build
-- pulp test 
+- pulp test -r phantomjs
 
 cache:
   directories:

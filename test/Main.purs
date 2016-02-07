@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude
 
-import Control.Monad.Aff (launchAff)
+import Control.Monad.Aff (Aff(), launchAff)
 import Control.Monad.Eff.Class (liftEff)
 import Control.Monad.Eff.Console (print)
 import Data.Either (Either(..), isLeft, isRight)
@@ -12,6 +12,10 @@ import Data.Tuple(Tuple(..))
 import Data.URI
 import Data.URI.Types
 import Data.Path.Pathy
+
+import Network.HTTP.Affjax (AJAX())
+import Network.HTTP.Affjax as Ajax
+import Network.HTTP.StatusCode
 
 import Test.Unit (test, runTest)
 import Test.Unit.Assert as Assert
@@ -26,11 +30,14 @@ authRoute =
   , path: rootDir </> dir "auth"
   }
 
-main = runTest do
-  test "logging in with right credentials" do
-    result <- login authRoute hardcoded "Foo" "Foo"
-    Assert.assert "Should be successful" $ isRight result 
+getHome :: ∀ eff. Aff (ajax :: AJAX | eff) (Either String String)
+getHome = do
+  { status, response } <- Ajax.get "http://localhost:7000/" :: Ajax.Affjax eff String
+  pure case status of
+    StatusCode 200 -> Right response
+    _ -> Left response
 
+main = runTest do
   test "logging in with invalid credentials" do
     result <- login authRoute hardcoded "Foo" "Bar"
     Assert.assert "Shouldn't be successful" $ isLeft result
@@ -41,3 +48,16 @@ main = runTest do
     Assert.assert "Shouldn't be successful" $ isLeft result
     Assert.assert "Should be 'LoginUsernameNotFound'" $
       result == Left (LoginUsernameNotFound "anonymous")
+
+  test "logging in with valid credentials and then logging out" do
+    result <- login authRoute hardcoded "Foo" "Foo"
+    Assert.assert "Should be successful" $ isRight result 
+
+    isLoggedIn <- isRight <$> getHome 
+    Assert.assert "Should be logged in" isLoggedIn
+
+    logout authRoute
+    isLoggedIn <- isRight <$> getHome 
+    Assert.assert "Shouldn't be logged in" (not isLoggedIn)
+
+

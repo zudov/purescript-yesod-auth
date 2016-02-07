@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
--- stack --resolver lts-5.1 runghc --package yesod-auth
+-- stack --resolver lts-5.1 runghc --package yesod-auth --package wai-cors --package wai-middleware-static
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -15,6 +15,10 @@ import Yesod
 import Yesod.Auth
 import Yesod.Auth.Hardcoded
 import Yesod.Auth.Message
+
+import Network.Wai.Middleware.Cors
+import Network.Wai.Middleware.Static
+import Network.Wai.Handler.Warp
 
 data App = App
 
@@ -60,5 +64,6 @@ getHomeR =
     >>= maybe (permissionDenied "You aren't authenticated")
               (pure . String)
 
-main = warp 7000 App 
-
+main = do
+  app <- toWaiApp App
+  run 7000 $ static $ simpleCors app
