@@ -34,7 +34,7 @@ import Data.Path.Pathy (Sandboxed, RelFile, AbsDir, file, (</>))
 -- |
 -- |     -- http://localhost:4000/auth/page/hardcoded/
 -- |     myEndpoint =
--- |       { scheme: Just (URIScheme "http"
+-- |       { scheme: Just (URIScheme "http")
 -- |       , authority:
 -- |           Just (Authority
 -- |                   Nothing
