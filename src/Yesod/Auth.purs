@@ -23,7 +23,7 @@ import Data.Foreign.Class (readProp) as Foreign
 import Network.HTTP.Affjax.Response (class Respondable, ResponseType(..))
 import Network.HTTP.MimeType.Common as Mime
 
-import Data.FormURLEncoded (FormURLEncoded(..))
+import Data.FormURLEncoded as FormURLEncoded
 
 import Data.URI (printURI)
 import Data.URI.Types (Authority, URIScheme, HierarchicalPart(HierarchicalPart), URI(URI))
@@ -81,7 +81,7 @@ login' uri username password =
    runLoginResponse <<< _.response <$> Ajax.post uri formquery
   where
     formquery =
-      FormURLEncoded
+      FormURLEncoded.fromArray
         [ Tuple "username" (Just username)
         , Tuple "password" (Just password) ]
 
