@@ -1,5 +1,5 @@
 module Yesod.Auth
-  ( Endpoint()
+  ( AuthRoute()
   , LoginSuccess(..)
   , LoginError(..)
   , login
@@ -12,7 +12,7 @@ import Control.Monad.Aff (Aff())
 import Data.Maybe (Maybe(Just, Nothing))
 import Network.HTTP.Affjax (AJAX())
 import Network.HTTP.Affjax (post, post') as Ajax
-import Prelude (class Eq, class Show, Unit, (>>>), map, (<$>), (<<<))
+import Prelude (class Eq, class Show, Unit, (>>>), map, (<$>), (<<<), ($))
 
 import Data.Generic (class Generic, gShow, gEq)
 import Data.Tuple (Tuple(..))
@@ -27,28 +27,30 @@ import Data.FormURLEncoded as FormURLEncoded
 
 import Data.URI (printURI)
 import Data.URI.Types (Authority, URIScheme, HierarchicalPart(HierarchicalPart), URI(URI))
-import Data.Path.Pathy (Sandboxed, RelFile, AbsDir, file, (</>))
+import Data.Path.Pathy (Sandboxed, RelFile, AbsDir, file, dir, (</>))
 
--- | Identifies the location of the authentication plugin.
+import Yesod.Auth.Plugin (PluginId(), runPluginId)
+
+-- | Identifies the location of the authentication subsite.
 -- | Example:
 -- |
--- |     -- http://localhost:4000/auth/page/hardcoded/
+-- |     -- http://localhost:4000/auth/
 -- |     myEndpoint =
 -- |       { scheme: Just (URIScheme "http")
 -- |       , authority:
 -- |           Just (Authority
 -- |                   Nothing
 -- |                   [ Tuple (NameAddress "localhost" (Just 4000)) ])
--- |       , path: rootDir </> dir "auth" </> dir "page" </> dir "hardcoded"
+-- |       , path: rootDir </> dir "auth"
 -- |       }
-type Endpoint
+type AuthRoute
   = { scheme :: Maybe URIScheme
     , authority :: Maybe Authority
     , path :: AbsDir Sandboxed
     }
 
-runEndpoint :: Endpoint -> RelFile Sandboxed -> URI
-runEndpoint { scheme, authority, path } file = 
+runAuthRoute :: AuthRoute -> RelFile Sandboxed -> URI
+runAuthRoute { scheme, authority, path } file = 
   URI scheme
       (HierarchicalPart authority (Just (Left (path </> file))))
       Nothing
@@ -58,14 +60,20 @@ runEndpoint { scheme, authority, path } file =
 -- | username/password. The result is returned, and the token is persisted in
 -- | the session.
 -- |
--- |     login myEndpoint "username" "password"
+-- |     login myEndpoint hardcoded "username" "password"
 login
   :: ∀ eff.
-     Endpoint
+     AuthRoute
+  -> PluginId
   -> String
   -> String
   -> Aff (ajax :: AJAX | eff) (Either LoginError LoginSuccess)
-login endpoint = login' (printURI (runEndpoint endpoint (file "login")))
+login authRoute pluginId =
+  login' $
+    printURI $
+      runAuthRoute
+        authRoute
+        (dir "page" </> dir (runPluginId pluginId) </> file "login")
 
 -- | This version of `login` allows to just provide URI of the '/login' endpoint
 -- | as a `String`. No fancy types involved.
@@ -85,17 +93,15 @@ login' uri username password =
         [ Tuple "username" (Just username)
         , Tuple "password" (Just password) ]
 
--- | Makes logout query to the '/logout' of the provided endpoint using given
--- | username/password.
--- |
--- |     logout myEndpoint
-logout :: ∀ eff. Endpoint -> Aff (ajax :: AJAX | eff) Unit
-logout endpoint = logout' (printURI (runEndpoint endpoint (file "logout")))
+-- | Makes logout query to the 'logout' endpoint of the provided `AuthRoute`.
+logout :: ∀ eff. AuthRoute -> Aff (ajax :: AJAX | eff) Unit
+logout authRoute =
+  logout' $ printURI $ runAuthRoute authRoute $ file "logout"
 
--- | This version of `logout` allows to just provide URI of the '/logout' endpoint
+-- | This version of `logout` allows to just provide URI of the 'logout' endpoint
 -- | as a `String`. No fancy types involved.
 -- | 
--- |     logout' "http://localhost:7000/auth/page/hardcoded/logout"
+-- |     logout' "http://localhost:7000/auth/logout"
 logout' :: ∀ eff. String -> Aff (ajax :: AJAX | eff) Unit
 logout' uri = _.response <$> Ajax.post' uri (Nothing :: Maybe Unit)
 
