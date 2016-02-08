@@ -28,6 +28,7 @@ script:
 - pulp build
 - pulp test -r browserify > output/test.js
 - phantomjs phantom.js
+- sleep 10
 
 cache:
   directories:
