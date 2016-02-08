@@ -8,6 +8,8 @@ module Yesod.Auth.Plugin
   , hardcoded
   , openId
   , rpxnow
+  , account
+  , hashDB
   ) where
 
 newtype PluginId

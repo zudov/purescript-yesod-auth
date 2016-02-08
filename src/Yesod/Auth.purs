@@ -56,9 +56,9 @@ runAuthRoute { scheme, authority, path } file =
       Nothing
       Nothing
 
--- | Makes login query to the '/login' of the provided endpoint using given
--- | username/password. The result is returned, and the token is persisted in
--- | the session.
+-- | Makes login query to the 'login' endpoint of the selected plugin under given
+-- | `AuthRoute` using provided username/password.
+-- | The result is returned, and the token is persisted in the session.
 -- |
 -- |     login myEndpoint hardcoded "username" "password"
 login
@@ -75,7 +75,7 @@ login authRoute pluginId =
         authRoute
         (dir "page" </> dir (runPluginId pluginId) </> file "login")
 
--- | This version of `login` allows to just provide URI of the '/login' endpoint
+-- | This version of `login` allows to just provide URI of the 'login' endpoint
 -- | as a `String`. No fancy types involved.
 -- | 
 -- |     login' "http://localhost:7000/auth/page/hardcoded/login" "username" "password"
@@ -93,7 +93,10 @@ login' uri username password =
         [ Tuple "username" (Just username)
         , Tuple "password" (Just password) ]
 
--- | Makes logout query to the 'logout' endpoint of the provided `AuthRoute`.
+-- | Makes login query to the 'logout' endpoint of the selected plugin under given
+-- | `AuthRoute`.
+-- |
+-- |     login myEndpoint hardcoded "username" "password"
 logout :: ∀ eff. AuthRoute -> Aff (ajax :: AJAX | eff) Unit
 logout authRoute =
   logout' $ printURI $ runAuthRoute authRoute $ file "logout"
