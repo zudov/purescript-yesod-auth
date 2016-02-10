@@ -10,14 +10,15 @@ Here is a glimse at the API:
 
 ```haskell
 import Yesod.Auth (login, logout, LoginSuccess(..), LoginFailure(..))
+import Yesod.Auth.Plugin (hardcoded)
 
-let endpoint =
+let authRoute =
       { scheme: Just (URIScheme "http")
       , authority: Just (Authority Nothing [Tuple (NameAddress "missile.dog") Nothing])
-      , path: rootDir </> dir "auth" </> dir "page" </> dir "hardcoded"
+      , path: rootDir </> dir "auth"
       }
 
-result <- login endpoint "username" "password"
+result <- login authRoute hardcoded "username" "password"
 
 case result of
   Right LoginSuccess
@@ -27,7 +28,7 @@ case result of
           Ajax.post "http://missile.dog/launch" "Poehali"
 
           alert "Now we gonna log you out"
-          logout endpoint
+          logout authRoute
 
   Left (LoginUsernameNotFound username)
     -> alert ("We don't know of any " <> username)
@@ -35,8 +36,8 @@ case result of
   Left LoginInvalid
     -> alert "Your credentials are invalid, go away."
 
-  Left LoginError
-    -> alert "Failed to login"
+  Left (LoginError msg)
+    -> alert ("Failed to login. " <> msg)
 
 ```
 
